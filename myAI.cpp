@@ -4,7 +4,7 @@
 #include <vector>
 #include <cstdlib>
 #include <ctime>
-
+ 
 struct Point {
     int x, y;
 	Point() : Point(0, 0) {}
@@ -27,7 +27,7 @@ struct Point {
         return *this;
 	}
 };
-
+ 
 class OthelloBoard {
 public:
     enum SPOT_STATE {
@@ -184,24 +184,23 @@ public:
         }*/
         return true;
     }
-    
+ 
 };
-
+ 
 int me_player;
 const int SIZE = 8;
 std::array<std::array<int, SIZE>, SIZE> input_board;
 std::vector<Point> next_valid_spots;
-
+ 
 std::array<std::array<int, SIZE>, SIZE> weight;
 OthelloBoard input;
-int amount = 0;
 void read_board(std::ifstream& fin) {
     fin >> me_player;
     input.cur_player = me_player;
     input.disc_count[0] = 0;
     input.disc_count[1] = 0;
     input.disc_count[2] = 0;
-
+ 
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
             fin >> input.board[i][j];
@@ -209,7 +208,7 @@ void read_board(std::ifstream& fin) {
         }
     }
 }
-
+ 
 void read_valid_spots(std::ifstream& fin) {
     int n_valid_spots;
     fin >> n_valid_spots;
@@ -220,15 +219,12 @@ void read_valid_spots(std::ifstream& fin) {
     }
     input.next_valid_spots = next_valid_spots;
 }
-
+ 
 int count_minimax(OthelloBoard root, int step, int preweight, int alpha, int beta)
 {
-    
+ 
     int al = alpha, be = beta;
-    if(step>0){
-        amount++;
-        return 0;
-    } 
+    if(step>4) return 0;
     if(root.cur_player==me_player){
         int max = -10000;
         if(root.next_valid_spots.size()!=0){
@@ -237,7 +233,7 @@ int count_minimax(OthelloBoard root, int step, int preweight, int alpha, int bet
                 next.put_disc(p);
                 int my_weight = weight[p.x][p.y] + count_minimax(next, step+1, weight[p.x][p.y], al, be);
                 int motion_for_op = next.next_valid_spots.size();
-                if(my_weight-motion_for_op>max) max = my_weight-motion_for_op;
+                if(my_weight-motion_for_op * 20>max) max = my_weight-motion_for_op * 20;
                 al = (al>max)? al : max;
                 if(al>=be) break;
             }
@@ -252,7 +248,7 @@ int count_minimax(OthelloBoard root, int step, int preweight, int alpha, int bet
                 next.put_disc(p);
                 int op_weight = (-1) * weight[p.x][p.y] + count_minimax(next, step+1, (-1)*weight[p.x][p.y], al, be);
                 int motion_for_me = next.next_valid_spots.size();
-                if(op_weight+motion_for_me<min) min = op_weight + motion_for_me;
+                if(op_weight + motion_for_me * 20 < min) min = op_weight + motion_for_me * 20;
                 be = (be<min)? be : min;
                 if(al>=be) break;
             }
@@ -260,7 +256,7 @@ int count_minimax(OthelloBoard root, int step, int preweight, int alpha, int bet
         return min;
     }
 }
-
+ 
 void write_valid_spot(std::ofstream& fout) {
     int best_weight = -2700;
     Point best_move;
@@ -271,8 +267,8 @@ void write_valid_spot(std::ofstream& fout) {
         for(auto p:input.next_valid_spots){
             OthelloBoard stack1;
             stack1.put_disc(p);
-
-            int max = weight[p.x][p.y] - stack1.next_valid_spots.size() + count_minimax(stack1, 0, 0, alpha, beta);
+ 
+            int max = weight[p.x][p.y] - stack1.next_valid_spots.size() * 10 + count_minimax(stack1, 0, 0, alpha, beta);
             if(max>best_weight){
                 best_weight = max;
                 best_move = p;
@@ -285,7 +281,7 @@ void write_valid_spot(std::ofstream& fout) {
     fout << best_move.x << " " << best_move.y << std::endl;
     fout.flush();
 }
-
+ 
 int main(int, char** argv) {
     for(int i=0; i<SIZE; i++){
         for(int j=0; j<SIZE; j++){
@@ -304,7 +300,7 @@ int main(int, char** argv) {
                 else if(j==1 || j==6) weight[i][j] = -50;
                 else weight[i][j] = 10;
             }
-
+ 
         }
     }
     std::ifstream fin(argv[1]);
@@ -335,14 +331,13 @@ int main(int, char** argv) {
             weight[7][i] = (900-100*i > weight[7][i])? 900-100*i : weight[7][i];
         }
     }
-
-
-    
-    
+ 
+ 
+ 
+ 
     write_valid_spot(fout);
-    std::cout<< amount<<std::endl;
-    system("pause");
     fin.close();
     fout.close();
     return 0;
 }
+ 
